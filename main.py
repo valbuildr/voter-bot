@@ -109,10 +109,10 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
             voter, created = Voter.get_or_create(user_id=interaction.user.id)
             if voter.voted:
                 await interaction.response.send_message(
-                    content="You've already voted!", ephemeral=False
+                    content="You've already voted!", ephemeral=True
                 )
             else:
-                await interaction.response.defer(ephemeral=False)
+                await interaction.response.defer(ephemeral=True)
                 file_extension = ballot.filename.split(".")[-1]
                 new_name = "".join(random.choices(ascii_letters + digits, k=10))
                 new_filename = f"{new_name}.{file_extension}"
@@ -122,9 +122,7 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
                 voter.voted = True
                 voter.save()
 
-                await interaction.followup.send(
-                    content="Ballot submitted!", ephemeral=True
-                )
+                await interaction.followup.send(content="Ballot submitted!")
         else:
             await interaction.response.send_message(
                 content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
