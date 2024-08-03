@@ -31,7 +31,7 @@ poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 22), f="aaaa")
 
 async def poll_close_task():
     while True:
-        now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
+        now = dt_to_timestamp(datetime.now(ZoneInfo("Europe/London")), f="aaaa")
 
         if now == poll_closes_at:
             name = "".join(random.choices(ascii_letters + digits, k=10))
@@ -104,7 +104,7 @@ async def zip(ctx: commands.Context):
 
 @bot.tree.command(name="vote", description="Submit your ballot!")
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
-    now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
+    now = dt_to_timestamp(datetime.now(ZoneInfo("Europe/London")), f="aaaa")
     if now > poll_opens_at and now < poll_closes_at:
         if (
             ballot.filename.split(".")[-1] == "png"
