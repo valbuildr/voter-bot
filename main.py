@@ -25,8 +25,8 @@ def dt_to_timestamp(dt: datetime, f: str) -> str:
         return f"<t:{int(dt.timestamp())}:{f}>"
 
 
-poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10), f="aaaa")
-poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 22), f="aaaa")
+poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 4), f="aaaa")
+poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 16), f="aaaa")
 
 
 async def poll_close_task():
