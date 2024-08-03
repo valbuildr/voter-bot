@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 bot = commands.Bot(
     command_prefix="+",
     intents=discord.Intents.all(),
-    activity=discord.Activity(name="your votes!", type=discord.ActivityType.listening),
+    status=discord.Status.online,
 )
 
 
@@ -29,10 +29,9 @@ poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 4), f="aaaa")
 poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 16), f="aaaa")
 
 
-async def poll_close_task():
+async def poll_task():
     while True:
         now = dt_to_timestamp(datetime.now(ZoneInfo("Europe/London")), f="aaaa")
-
         if now == poll_closes_at:
             name = "".join(random.choices(ascii_letters + digits, k=10))
             arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
@@ -42,14 +41,9 @@ async def poll_close_task():
             )
             await channel.send(file=discord.File(arc))
 
-            await bot.change_presence(
-                status=discord.Status.dnd,
-                activity=discord.Activity(
-                    name="Polls are closed!", type=discord.ActivityType.custom
-                ),
-            )
+            await bot.change_presence(status=discord.Status.dnd)
 
-        await asyncio.sleep(1)  # run every second
+        await asyncio.sleep(60)  # run every minute
 
 
 @bot.command()
@@ -65,7 +59,7 @@ async def sync(ctx: commands.Context):
 async def on_ready():
     database.db.create_tables([Voter])
 
-    bot.loop.create_task(poll_close_task())
+    bot.loop.create_task(poll_task())
 
 
 @bot.command()
