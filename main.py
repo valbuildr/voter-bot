@@ -48,12 +48,12 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
 
         ballot_downloaded = await ballot.save(f"ballots/{new_filename}")
 
-        channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
+        # channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
 
         voter.voted = True
         voter.save()
 
-        await channel.send(file=discord.File(f"ballots/{new_filename}"))
+        # await channel.send(file=discord.File(f"ballots/{new_filename}"))
 
         await interaction.followup.send(content="Ballot submitted!")
 
