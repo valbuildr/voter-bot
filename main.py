@@ -1,4 +1,4 @@
-import discord, peewee, random
+import discord, peewee, random, shutil
 from discord.ext import commands
 import database
 from models.voter import Voter
@@ -35,27 +35,53 @@ async def clear(ctx: commands.Context):
 @bot.tree.command(name="vote", description="Submit your ballot!")
 @discord.app_commands.dm_only()
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
-    voter, created = Voter.get_or_create(user_id=interaction.user.id)
-    if voter.voted:
-        await interaction.response.send_message(
-            content="You've already voted!", ephemeral=False
-        )
+    if (
+        ballot.filename.split(".")[-1] == "png"
+        or ballot.filename.split(".")[-1] == "pdf"
+    ):
+        voter, created = Voter.get_or_create(user_id=interaction.user.id)
+        if voter.voted:
+            await interaction.response.send_message(
+                content="You've already voted!", ephemeral=False
+            )
+        else:
+            await interaction.response.defer(ephemeral=False)
+            file_extension = ballot.filename.split(".")[-1]
+            new_name = "".join(random.choices(ascii_letters + digits, k=10))
+            new_filename = f"{new_name}.{file_extension}"
+
+            await ballot.save(f"ballots/{new_filename}")
+
+            voter.voted = True
+            voter.save()
+
+            await interaction.followup.send(content="Ballot submitted!")
     else:
-        await interaction.response.defer(ephemeral=False)
-        file_extension = ballot.filename.split(".")[-1]
-        new_name = "".join(random.choices(ascii_letters + digits, k=10))
-        new_filename = f"{new_name}.{file_extension}"
+        await interaction.response.send_message(
+            content="I only accept `.png` or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a PNG if you need.",
+            ephemeral=True,
+        )
 
-        ballot_downloaded = await ballot.save(f"ballots/{new_filename}")
 
-        # channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
+counters = [
+    458672342885859359,  # mint
+    891289393095131206,  # mad
+    # 1191850547138007132,  # val (for debugging)
+]
 
-        voter.voted = True
-        voter.save()
 
-        # await channel.send(file=discord.File(f"ballots/{new_filename}"))
+@bot.tree.command(
+    name="zip", description="(COUNTER ONLY) Sends a ZIP file of all the ballots."
+)
+async def zip(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    name = "".join(random.choices(ascii_letters + digits, k=10))
+    arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
 
-        await interaction.followup.send(content="Ballot submitted!")
+    channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
+    await channel.send(file=discord.File(arc))
+
+    await interaction.followup.send(content="Sent to ballots channel!")
 
 
 bot.run(config["DISCORD_TOKEN"])
