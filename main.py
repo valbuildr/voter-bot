@@ -7,7 +7,11 @@ from dotenv import dotenv_values
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-bot = commands.Bot(command_prefix="+", intents=discord.Intents.all())
+bot = commands.Bot(
+    command_prefix="+",
+    intents=discord.Intents.all(),
+    activity=discord.Activity(name="your votes!", type=discord.ActivityType.listening),
+)
 
 
 config = dotenv_values(".env")
@@ -70,7 +74,6 @@ async def zip(ctx: commands.Context):
 
 
 @bot.tree.command(name="vote", description="Submit your ballot!")
-@discord.app_commands.dm_only()
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
     if (
         ballot.filename.split(".")[-1] == "png"
@@ -94,12 +97,18 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
             voter.voted = True
             voter.save()
 
-            await interaction.followup.send(content="Ballot submitted!")
+            await interaction.followup.send(content="Ballot submitted!", ephemeral=True)
     else:
         await interaction.response.send_message(
             content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
             ephemeral=True,
         )
+
+
+@bot.tree.command(name="ballot", description="Get your ballot!")
+async def ballot(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    await interaction.followup.send(file="ballot.pdf", ephemeral=True)
 
 
 poll_closes_at = datetime(2024, 8, 4, 22)
@@ -118,6 +127,13 @@ async def poll_close():
                 1269131011489402921
             )
             await channel.send(file=discord.File(arc))
+
+            await bot.change_presence(
+                status=discord.Status.dnd,
+                activity=discord.Activity(
+                    name="Polls are closed!", type=discord.ActivityType.custom
+                ),
+            )
 
 
 bot.run(config["DISCORD_TOKEN"])

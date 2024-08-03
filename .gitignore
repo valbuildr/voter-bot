@@ -164,3 +164,4 @@ cython_debug/
 ballots/
 ballot-zips/
 *.db
+ballot.pdf
