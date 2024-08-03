@@ -25,6 +25,33 @@ def dt_to_timestamp(dt: datetime, f: str) -> str:
         return f"<t:{int(dt.timestamp())}:{f}>"
 
 
+poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10), f="aaaa")
+poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 22), f="aaaa")
+
+
+async def poll_close_task():
+    while True:
+        now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
+
+        if now == poll_closes_at:
+            name = "".join(random.choices(ascii_letters + digits, k=10))
+            arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
+
+            channel = bot.get_guild(1195698082797592577).get_channel(
+                1269131011489402921
+            )
+            await channel.send(file=discord.File(arc))
+
+            await bot.change_presence(
+                status=discord.Status.dnd,
+                activity=discord.Activity(
+                    name="Polls are closed!", type=discord.ActivityType.custom
+                ),
+            )
+
+        await asyncio.sleep(1)  # run every second
+
+
 @bot.command()
 @commands.is_owner()
 @commands.dm_only()
@@ -37,6 +64,8 @@ async def sync(ctx: commands.Context):
 @bot.event
 async def on_ready():
     database.db.create_tables([Voter])
+
+    bot.loop.create_task(poll_close_task())
 
 
 @bot.command()
@@ -71,10 +100,6 @@ async def zip(ctx: commands.Context):
     await channel.send(file=discord.File(arc))
 
     await ctx.send(content="Sent!")
-
-
-poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10), f="aaaa")
-poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 22), f="aaaa")
 
 
 @bot.tree.command(name="vote", description="Submit your ballot!")
@@ -127,27 +152,6 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
 # async def ballot(interaction: discord.Interaction):
 #     await interaction.response.defer(ephemeral=True)
 #     await interaction.followup.send(file="ballot.pdf", ephemeral=True)
-
-
-async def poll_close():
-    while True:
-        now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
-
-        if now == poll_closes_at:
-            name = "".join(random.choices(ascii_letters + digits, k=10))
-            arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
-
-            channel = bot.get_guild(1195698082797592577).get_channel(
-                1269131011489402921
-            )
-            await channel.send(file=discord.File(arc))
-
-            await bot.change_presence(
-                status=discord.Status.dnd,
-                activity=discord.Activity(
-                    name="Polls are closed!", type=discord.ActivityType.custom
-                ),
-            )
 
 
 bot.run(config["DISCORD_TOKEN"])
