@@ -88,14 +88,19 @@ counters = [
     name="zip", description="(COUNTER ONLY) Sends a ZIP file of all the ballots."
 )
 async def zip(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    name = "".join(random.choices(ascii_letters + digits, k=10))
-    arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
+    if interaction.user.id in counters:
+        await interaction.response.defer(ephemeral=True)
+        name = "".join(random.choices(ascii_letters + digits, k=10))
+        arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
 
-    channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
-    await channel.send(file=discord.File(arc))
+        channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
+        await channel.send(file=discord.File(arc))
 
-    await interaction.followup.send(content="Sent to ballots channel!")
+        await interaction.followup.send(content="Sent to ballots channel!")
+    else:
+        await interaction.response.send_message(
+            content="You're not allowed to do this!", ephemeral=True
+        )
 
 
 bot.run(config["DISCORD_TOKEN"])
