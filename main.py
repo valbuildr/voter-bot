@@ -1,4 +1,4 @@
-import discord, peewee, random, shutil
+import discord, peewee, random, shutil, os
 from discord.ext import commands
 import database
 from models.voter import Voter
@@ -29,6 +29,20 @@ async def on_ready():
 @commands.is_owner()
 @commands.dm_only()
 async def clear(ctx: commands.Context):
+    # clear database
+    d = Voter.select()
+    for voter in d:
+        voter.delete_instance()
+    # clear ballots folder
+    ballot_files = os.listdir(path="ballots")
+    for file in ballot_files:
+        file = f"ballots/{file}"
+        os.remove(file)
+    # clear ballot-zips folder
+    ballotzips_files = os.listdir(path="ballot-zips")
+    for file in ballotzips_files:
+        file = f"ballot-zips/{file}"
+        os.remove(file)
     await ctx.send(content="Data cleared!")
 
 
