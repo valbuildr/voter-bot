@@ -56,6 +56,19 @@ async def clear(ctx: commands.Context):
     await ctx.send(content="Data cleared!")
 
 
+@bot.command()
+@commands.is_owner()
+@commands.dm_only()
+async def zip(ctx: commands.Context):
+    name = "".join(random.choices(ascii_letters + digits, k=10))
+    arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
+
+    channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
+    await channel.send(file=discord.File(arc))
+
+    await ctx.send(content="Sent!")
+
+
 @bot.tree.command(name="vote", description="Submit your ballot!")
 @discord.app_commands.dm_only()
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
@@ -87,10 +100,6 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
             content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
             ephemeral=True,
         )
-
-
-@bot.tree.command(name="ballot", description="Get the ballot!")
-async def ballot(interaction: discord.Interaction): ...
 
 
 poll_closes_at = datetime(2024, 8, 4, 22)
