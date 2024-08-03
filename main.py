@@ -105,10 +105,10 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
         )
 
 
-@bot.tree.command(name="ballot", description="Get your ballot!")
-async def ballot(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    await interaction.followup.send(file="ballot.pdf", ephemeral=True)
+# @bot.tree.command(name="ballot", description="Get your ballot!")
+# async def ballot(interaction: discord.Interaction):
+#     await interaction.response.defer(ephemeral=True)
+#     await interaction.followup.send(file="ballot.pdf", ephemeral=True)
 
 
 poll_closes_at = datetime(2024, 8, 4, 22)
