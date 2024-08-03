@@ -1,14 +1,24 @@
-import discord, peewee, random, shutil, os
+import discord, peewee, random, shutil, os, asyncio
 from discord.ext import commands
 import database
 from models.voter import Voter
 from string import ascii_letters, digits
 from dotenv import dotenv_values
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 bot = commands.Bot(command_prefix="+", intents=discord.Intents.all())
 
 
 config = dotenv_values(".env")
+
+
+def dt_to_timestamp(dt: datetime, f: str) -> str:
+    formats = ["d", "D", "t", "T", "f", "F", "R"]
+    if f not in formats:
+        return str(int(dt.timestamp()))
+    else:
+        return f"<t:{int(dt.timestamp())}:{f}>"
 
 
 @bot.command()
@@ -52,6 +62,8 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
     if (
         ballot.filename.split(".")[-1] == "png"
         or ballot.filename.split(".")[-1] == "pdf"
+        or ballot.filename.split(".")[-1] == "jpeg"
+        or ballot.filename.split(".")[-1] == "jpg"
     ):
         voter, created = Voter.get_or_create(user_id=interaction.user.id)
         if voter.voted:
@@ -72,35 +84,31 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
             await interaction.followup.send(content="Ballot submitted!")
     else:
         await interaction.response.send_message(
-            content="I only accept `.png` or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a PNG if you need.",
+            content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
             ephemeral=True,
         )
 
 
-counters = [
-    458672342885859359,  # mint
-    891289393095131206,  # mad
-    # 1191850547138007132,  # val (for debugging)
-]
+@bot.tree.command(name="ballot", description="Get the ballot!")
+async def ballot(interaction: discord.Interaction): ...
 
 
-@bot.tree.command(
-    name="zip", description="(COUNTER ONLY) Sends a ZIP file of all the ballots."
-)
-async def zip(interaction: discord.Interaction):
-    if interaction.user.id in counters:
-        await interaction.response.defer(ephemeral=True)
-        name = "".join(random.choices(ascii_letters + digits, k=10))
-        arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
+poll_closes_at = datetime(2024, 8, 4, 22)
 
-        channel = bot.get_guild(1195698082797592577).get_channel(1269131011489402921)
-        await channel.send(file=discord.File(arc))
 
-        await interaction.followup.send(content="Sent to ballots channel!")
-    else:
-        await interaction.response.send_message(
-            content="You're not allowed to do this!", ephemeral=True
-        )
+async def poll_close():
+    while True:
+        now = dt_to_timestamp(datetime.now("Europe/London"))
+        close_at = dt_to_timestamp(poll_closes_at)
+
+        if now == close_at:
+            name = "".join(random.choices(ascii_letters + digits, k=10))
+            arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
+
+            channel = bot.get_guild(1195698082797592577).get_channel(
+                1269131011489402921
+            )
+            await channel.send(file=discord.File(arc))
 
 
 bot.run(config["DISCORD_TOKEN"])
