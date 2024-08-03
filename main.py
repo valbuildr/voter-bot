@@ -73,13 +73,14 @@ async def zip(ctx: commands.Context):
     await ctx.send(content="Sent!")
 
 
-poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10))
+poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10), f="aaaa")
+poll_closes_at = dt_to_timestamp(datetime(2024, 8, 4, 22), f="aaaa")
 
 
 @bot.tree.command(name="vote", description="Submit your ballot!")
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
-    now = dt_to_timestamp(datetime.now("Europe/London"))
-    if now > poll_opens_at:
+    now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
+    if now > poll_opens_at and now < poll_closes_at:
         if (
             ballot.filename.split(".")[-1] == "png"
             or ballot.filename.split(".")[-1] == "pdf"
@@ -111,9 +112,15 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
                 ephemeral=True,
             )
     else:
-        await interaction.response.send_message(
-            content=f"Polls open on <t:{poll_opens_at}:D> at <t:{poll_opens_at}:t>. (<t:{poll_opens_at}:R>)"
-        )
+        if now < poll_opens_at:
+            await interaction.response.send_message(
+                content=f"Polls open on <t:{poll_opens_at}:D> at <t:{poll_opens_at}:t>. (<t:{poll_opens_at}:R>)",
+                ephemeral=True,
+            )
+        if now > poll_closes_at:
+            await interaction.response.send_message(
+                content=f"Polls are closed.", ephemeral=True
+            )
 
 
 # @bot.tree.command(name="ballot", description="Get your ballot!")
@@ -122,15 +129,11 @@ async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
 #     await interaction.followup.send(file="ballot.pdf", ephemeral=True)
 
 
-poll_closes_at = datetime(2024, 8, 4, 22)
-
-
 async def poll_close():
     while True:
-        now = dt_to_timestamp(datetime.now("Europe/London"))
-        close_at = dt_to_timestamp(poll_closes_at)
+        now = dt_to_timestamp(datetime.now("Europe/London"), f="aaaa")
 
-        if now == close_at:
+        if now == poll_closes_at:
             name = "".join(random.choices(ascii_letters + digits, k=10))
             arc = shutil.make_archive(f"ballot-zips/{name}", "zip", "ballots")
 
