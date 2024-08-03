@@ -73,35 +73,46 @@ async def zip(ctx: commands.Context):
     await ctx.send(content="Sent!")
 
 
+poll_opens_at = dt_to_timestamp(datetime(2024, 8, 3, 10))
+
+
 @bot.tree.command(name="vote", description="Submit your ballot!")
 async def vote(interaction: discord.Interaction, ballot: discord.Attachment):
-    if (
-        ballot.filename.split(".")[-1] == "png"
-        or ballot.filename.split(".")[-1] == "pdf"
-        or ballot.filename.split(".")[-1] == "jpeg"
-        or ballot.filename.split(".")[-1] == "jpg"
-    ):
-        voter, created = Voter.get_or_create(user_id=interaction.user.id)
-        if voter.voted:
-            await interaction.response.send_message(
-                content="You've already voted!", ephemeral=False
-            )
+    now = dt_to_timestamp(datetime.now("Europe/London"))
+    if now > poll_opens_at:
+        if (
+            ballot.filename.split(".")[-1] == "png"
+            or ballot.filename.split(".")[-1] == "pdf"
+            or ballot.filename.split(".")[-1] == "jpeg"
+            or ballot.filename.split(".")[-1] == "jpg"
+        ):
+            voter, created = Voter.get_or_create(user_id=interaction.user.id)
+            if voter.voted:
+                await interaction.response.send_message(
+                    content="You've already voted!", ephemeral=False
+                )
+            else:
+                await interaction.response.defer(ephemeral=False)
+                file_extension = ballot.filename.split(".")[-1]
+                new_name = "".join(random.choices(ascii_letters + digits, k=10))
+                new_filename = f"{new_name}.{file_extension}"
+
+                await ballot.save(f"ballots/{new_filename}")
+
+                voter.voted = True
+                voter.save()
+
+                await interaction.followup.send(
+                    content="Ballot submitted!", ephemeral=True
+                )
         else:
-            await interaction.response.defer(ephemeral=False)
-            file_extension = ballot.filename.split(".")[-1]
-            new_name = "".join(random.choices(ascii_letters + digits, k=10))
-            new_filename = f"{new_name}.{file_extension}"
-
-            await ballot.save(f"ballots/{new_filename}")
-
-            voter.voted = True
-            voter.save()
-
-            await interaction.followup.send(content="Ballot submitted!", ephemeral=True)
+            await interaction.response.send_message(
+                content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
+                ephemeral=True,
+            )
     else:
         await interaction.response.send_message(
-            content="I only accept `.jpg`, `.jpeg`, `.png`, or `.pdf` files.\n\nYou can use [this tool](https://cloudconvert.com/jpg-to-png) to convert any image to a supported format if you need.",
-            ephemeral=True,
+            content=f"Polls open on <t:{poll_opens_at}:D> at <t:{poll_opens_at}:t>. (<t:{poll_opens_at}:R>)"
         )
 
 
